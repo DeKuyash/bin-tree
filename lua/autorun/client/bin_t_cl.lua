@@ -53,13 +53,15 @@ end
 
 
 local button_MakeChild
-button_MakeChild = function(buttonParent, frame, parents, childs, buttonCount, buttonWidth, buttonHeight)
+button_MakeChild = function(buttonParent, frame, parents, buttonCount, buttonWidth, buttonHeight)
 
     if buttonCount <= 0 then return {} end
 
     buttonCount = buttonCount - 1
     buttonWidth = buttonWidth / 2
     buttonHeight = buttonHeight + 15
+
+    local childs = {}
 
     local bChild1 = vgui.Create('DButton', frame)
     bChild1:SetSize(30, 30)
@@ -76,39 +78,6 @@ button_MakeChild = function(buttonParent, frame, parents, childs, buttonCount, b
 
     -----------------------------------------------
 
-    bChild1.DoClick = function()
-        button_WasPressed(bChild1)
-
-        for _, v in ipairs(parents) do
-            button_AnotherPressed(v)
-        end
-
-        if childs ~= {} then
-            for _, v in ipairs(childs) do
-                button_AnotherPressed(v)
-            end
-        end
-
-    end
-
-
-    bChild2.DoClick = function()
-        button_WasPressed(bChild2)
-
-        for _, v in ipairs(parents) do
-            button_AnotherPressed(v)
-        end
-
-        if childs ~= {} then
-            for _, v in ipairs(childs) do
-                button_AnotherPressed(v)
-            end
-        end
-
-    end
-
-    -----------------------------------------------
-
     local parentsChild1 = {buttonParent, bChild1}
     local parentsChild2 = {buttonParent, bChild2}
 
@@ -120,22 +89,48 @@ button_MakeChild = function(buttonParent, frame, parents, childs, buttonCount, b
 
     ---
 
-    local childsChild1 = {}
-    local childsChild2 = {}
+    local bChild1_childs = button_MakeChild(bChild1, frame, parentsChild1, buttonCount, buttonWidth, buttonHeight)
+    local bChild2_childs = button_MakeChild(bChild2, frame, parentsChild2, buttonCount, buttonWidth, buttonHeight)
 
-    local bChild1_childs = button_MakeChild(bChild1, frame, parentsChild1, {}, buttonCount, buttonWidth, buttonHeight)
-    local bChild2_childs = button_MakeChild(bChild2, frame, parentsChild2, {}, buttonCount, buttonWidth, buttonHeight)
+    table.Add(childs, bChild1_childs)
+    table.Add(childs, bChild2_childs)
+    table.insert(childs, bChild1)
+    table.insert(childs, bChild2)
 
-    table.insert(childs, bChild1_childs)
-    table.insert(childs, bChild2_childs)
+
+    -----------------------------------------------
+
+    bChild1.DoClick = function()
+        button_WasPressed(bChild1)
+
+        for _, v in ipairs(parents) do
+            button_AnotherPressed(v)
+        end
+
+
+        for _, v in ipairs(bChild1_childs) do
+            button_AnotherPressed(v)
+        end
+    end
+
+
+    bChild2.DoClick = function()
+        button_WasPressed(bChild2)
+
+        for _, v in ipairs(parents) do
+            button_AnotherPressed(v)
+        end
+
+
+        for _, v in ipairs(bChild2_childs) do
+            button_AnotherPressed(v)
+        end
+    end
+
 
     return childs
 
 end
-
-
-
-
 
 
 
@@ -172,11 +167,7 @@ local function menu_BinTree()
     child1Button:SetText('')
     button_DrawLine(startButton, child1Button, baseFrame)
 
-    child1Button.DoClick = function()
-        button_WasPressed(child1Button)
-        button_AnotherPressed(startButton)
 
-    end
 
 
     local child2Button = vgui.Create('DButton', baseFrame)
@@ -185,21 +176,17 @@ local function menu_BinTree()
     child2Button:SetText('')
     button_DrawLine(startButton, child2Button, baseFrame)
 
-    child2Button.DoClick = function()
-        button_WasPressed(child2Button)
-        button_AnotherPressed(startButton)
 
-    end
 
     -----------------------------------------------
 
     local startButton_parents1 = {} -- передача родителей
     local startButton_parents2 = {}
-    table.insert(startButton_parents1, startButton) -- добавляем в разные списки род один общий начальный 
+    table.insert(startButton_parents1, startButton)
     table.insert(startButton_parents2, startButton)
 
 
-    table.insert(startButton_parents1, child1Button) -- передаем в уникальные списки своих родителей
+    table.insert(startButton_parents1, child1Button)
     table.insert(startButton_parents2, child2Button)
 
     -- передача дочерних
@@ -210,11 +197,32 @@ local function menu_BinTree()
     local buttonWidth = 60 * buttonCount
     local buttonHeight = 60
 
-    local child1Button_childs = button_MakeChild(child1Button, baseFrame, startButton_parents1, {}, buttonCount, buttonWidth, buttonHeight)
-    local child2Button_childs = button_MakeChild(child2Button, baseFrame, startButton_parents2, {}, buttonCount, buttonWidth, buttonHeight)
+    local child1Button_childs = button_MakeChild(child1Button, baseFrame, startButton_parents1, buttonCount, buttonWidth, buttonHeight)
+    local child2Button_childs = button_MakeChild(child2Button, baseFrame, startButton_parents2, buttonCount, buttonWidth, buttonHeight)
 
     table.Add(startButton_childs, child1Button_childs)
     table.Add(startButton_childs, child2Button_childs)
+
+    -----------------------------------------------
+
+    child1Button.DoClick = function()
+        button_WasPressed(child1Button)
+        button_AnotherPressed(startButton)
+
+        for _, v in ipairs(child1Button_childs) do
+            button_AnotherPressed(v)
+        end
+    end
+
+    child2Button.DoClick = function()
+        button_WasPressed(child2Button)
+        button_AnotherPressed(startButton)
+
+        for _, v in ipairs(child2Button_childs) do
+            button_AnotherPressed(v)
+        end
+    end
+
 
 end
 
